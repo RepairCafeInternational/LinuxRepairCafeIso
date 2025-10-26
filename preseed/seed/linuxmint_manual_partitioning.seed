@@ -1,0 +1,67 @@
+# Helpfull debian example preseed: https://www.debian.org/releases/bookworm/example-preseed.txt
+#
+# src: https://wiki.ubuntu.com/UbiquityAutomation
+# Linux mint uses the ubiquity installer, which is based on the debian installer (d-i)
+# A subset of the directives of the debian installer are supported:
+# The following keys are NOT used with ubiquity:
+#   netcfg
+#   LVM and RAID partitioning
+#   base-installer
+#   pkgsel/tasksel
+#   finish-install 
+
+### POST INSTALL ##############################################################
+ubiquity ubiquity/success_command string \
+    cp --no-preserve=mode,ownership /cdrom/preseed/scripts/seed_desktop_files.sh /target/usr/local/bin/; \
+    chmod +x /target/usr/local/bin/seed_desktop_files.sh; \
+    cp --no-preserve=mode,ownership /cdrom/preseed/scripts/seed_desktop.desktop /target/etc/xdg/autostart/; \
+    mkdir -p /target/usr/share/skel-desktop-files/; \
+    cp --no-preserve=mode,ownership /cdrom/preseed/files/* /target/usr/share/skel-desktop-files/; \
+    cp --no-preserve=mode,ownership /cdrom/preseed/scripts/post_install.sh /target/tmp/; \
+    in-target chmod +x /tmp/post_install.sh; \
+    in-target /bin/bash /tmp/post_install.sh; \
+    rm /target/tmp/post_install.sh
+
+
+
+### INSTALLER #################################################################
+# use non-free codecs
+ubiquity ubiquity/use_nonfree true
+
+# Don't ask questions
+d-i debconf/frontend select Noninteractive
+d-i debconf/priority select critical
+
+# Shutdown when done
+ubiquity ubiquity/poweroff boolean true
+
+
+### OEM #######################################################################
+d-i ubiquity/summary note
+
+# Set temporary oem account, will be removed later.
+d-i oem-config/enable boolean true
+d-i passwd/user-fullname string OEM
+d-i passwd/username string oem
+d-i passwd/user-password password oem
+d-i passwd/user-password-again password oem
+d-i user-setup/allow-password-weak boolean true
+
+
+### LOCALIZATION ##############################################################
+d-i debian-installer/locale string en_US.UTF-8
+
+# Keyboard selection.
+d-i keyboard-configuration/layoutcode string us
+d-i keyboard-configuration/xkb-keymap select us
+d-i keyboard-configuration/variantcode string
+
+# Clock and time zone setup
+d-i clock-setup/utc boolean true
+d-i time/zone string Europe/Amsterdam
+d-i clock-setup/ntp boolean true
+d-i clock-setup/ntp-server string pool.ntp.org
+
+### NETWORK ###################################################################
+# Enable networking
+d-i netcfg/enable boolean true

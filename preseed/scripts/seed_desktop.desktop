@@ -1,0 +1,5 @@
+[Desktop Entry]
+Type=Application
+Exec=/usr/local/bin/seed_desktop_files.sh
+X-GNOME-Autostart-enabled=true
+Name=Seed Desktop Files
