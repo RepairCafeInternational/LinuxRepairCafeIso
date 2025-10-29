@@ -64,7 +64,7 @@ For every ISO release you can find these files on our sourceforge page.
 
 ### Import the public key from the repair cafe website
 
-    curl -s https://example.org/public_key.asc | gpg --import
+    curl -s https://www.repaircafe.org/wp-content/uploads/2025/10/Linux_Repair_Cafe_Pubkey.txt | gpg --import
 
     # Check that the public key was properly imported
     gpg --list-keys
