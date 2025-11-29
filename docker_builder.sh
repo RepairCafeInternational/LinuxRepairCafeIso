@@ -84,7 +84,7 @@ sign_checksum() {
 
     gpg --armor --local-user "$keyid" --output "${out_file}" --detach-sign "$checksum_file" \
         && log "Signed checksum: ${out_file}" \
-        || log "Failed to sign $checksum_file"
+        || die "Failed to sign $checksum_file"
 }
 
 build_container() {
