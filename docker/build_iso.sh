@@ -35,11 +35,11 @@ ISO_VOLUME_LABEL=""
 MBR_IMAGE_PATH=""
 
 log() {
-    echo -e "\033[32m[INSIDE $(date '+%Y-%m-%d %H:%M:%S')]\033[0m $1"
+    echo -e "\033[32m[DOCKER $(date '+%Y-%m-%d %H:%M:%S')]\033[0m $1"
 }
 
 die() {
-    echo -e "\033[31mINSIDE ERROR:\033[0m $1" >&2
+    echo -e "\033[31mDOCKER ERROR:\033[0m $1" >&2
     exit 1
 }
 
