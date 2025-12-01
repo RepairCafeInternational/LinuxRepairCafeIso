@@ -56,9 +56,9 @@ This ensures the file really comes from the Linux Repair Café project and has n
 
 Verification requires three files and a public key.  
 
-    linuxmint-repair-VERSION-YYYY.MM.DD.iso
-    linuxmint-repair-VERSION-YYYY.MM.DD.iso.sha256
-    linuxmint-repair-VERSION-YYYY.MM.DD.iso.sha256.gpg
+    lrc-linuxmint-VERSION-YYYY.MM.DD.iso
+    lrc-linuxmint-VERSION-YYYY.MM.DD.iso.sha256
+    lrc-linuxmint-VERSION-YYYY.MM.DD.iso.sha256.gpg
 
 For every ISO release you can find these files on our sourceforge page.  
 
@@ -73,7 +73,7 @@ For every ISO release you can find these files on our sourceforge page.
 We publish the official GPG fingerprint on this GitHub page and other trusted places.  
 After importing our public key, check its fingerprint:  
 
-    # The fingerprint should correspond to the fingerprint on this page
+    # The fingerprint should correspond to the repair cafe fingerprint.
     # 829C A1EF E0E9 28CA 7587  2A41 8D8D F1CA 6F15 E39F
     gpg --fingerprint <KEYID>
 
@@ -81,8 +81,8 @@ After importing our public key, check its fingerprint:
 We sign the *.sha256sum file with our private GPG key.  
 You verify it using our public key:  
 
-    gpg --verify linuxmint-repair-VERSION-YYYY.MM.DD.iso.sha256sum.gpg \
-                 linuxmint-repair-VERSION-YYYY.MM.DD.iso.sha256sum
+    gpg --verify lrc-linuxmint-VERSION-YYYY.MM.DD.iso.sha256sum.gpg \
+                 lrc-linuxmint-VERSION-YYYY.MM.DD.iso.sha256sum
 
 ### Checksum proves the ISO
 Finally, check that the ISO’s SHA-256 hash matches the signed checksum.  
@@ -90,7 +90,7 @@ If they match, the ISO is guaranteed to be exactly the one we released.
 
     # Place all files in the same directory.
     # This should return an OK
-    sha256sum --check linuxmint-repair-VERSION-YYYY.MM.DD.iso.sha256
+    sha256sum --check lrc-linuxmint-VERSION-YYYY.MM.DD.iso.sha256
 
 
 ## Create install ISO
@@ -109,7 +109,7 @@ To ensure a consistent build environment, a Dockerfile for docker is provided in
     sudo apt install git
 
     # Clone this git repository
-    git clone https://github.com/elcoco/linux_repaircafe_iso
+    git clone https://github.com/RepairCafeInternational/LinuxRepairCafeIso
 
 ### Building the ISO
 The Dockerfile will automatically be built when running the docker_builder.sh script.  

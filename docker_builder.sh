@@ -13,9 +13,9 @@ readonly PRESEED_DIR="${SCRIPT_DIR}/preseed"
 readonly ISO_VOLUME_LABEL="LINUX_REPAIR_CAFE_MINT_22_2"
 readonly ISO_PUBLISHER="Linux Repair Cafe"
 readonly DATE_STAMP="$(date '+%Y.%m.%d')"
-readonly ISO_FILENAME="linuxmint-repair-22.2-${DATE_STAMP}.iso"
-readonly SHA_FILENAME="linuxmint-repair-22.2-${DATE_STAMP}.sha256"
-readonly SIGNED_SHA_FILENAME="linuxmint-repair-22.2-${DATE_STAMP}.sha256.gpg"
+readonly ISO_FILENAME="lrc-linuxmint-22.2-${DATE_STAMP}.iso"
+readonly SHA_FILENAME="lrc-linuxmint-22.2-${DATE_STAMP}.sha256"
+readonly SIGNED_SHA_FILENAME="lrc-linuxmint-22.2-${DATE_STAMP}.sha256.gpg"
 
 readonly CONTAINER_NAME="iso_builder"
 
