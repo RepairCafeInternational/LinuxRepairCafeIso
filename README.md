@@ -51,7 +51,7 @@ When you boot from the ISO, you’ll be presented with the following options:
 
 
 ## Verify the ISO
-When downlaoding an installation ISO you should always verify it.  
+When downloading an installation ISO you should always verify it.  
 This ensures the file really comes from the Linux Repair Café project and has not been tampered with.  
 
 Verification requires three files and a public key.  
