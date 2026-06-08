@@ -9,13 +9,8 @@ readonly CONTAINER_FILE_PATH="${SCRIPT_DIR}/docker/Dockerfile"
 readonly BUILD_SCRIPT_PATH="${SCRIPT_DIR}/docker/build_iso.sh"
 readonly PRESEED_DIR="${SCRIPT_DIR}/preseed"
 
-# ISO volume label should follow iso 9660 standard (32 bytes, [A-Z0-9_])
-readonly ISO_VOLUME_LABEL="LINUX_REPAIR_CAFE_MINT_22_2"
 readonly ISO_PUBLISHER="Linux Repair Cafe"
 readonly DATE_STAMP="$(date '+%Y.%m.%d')"
-readonly ISO_FILENAME="lrc-linuxmint-22.2-${DATE_STAMP}.iso"
-readonly SHA_FILENAME="lrc-linuxmint-22.2-${DATE_STAMP}.sha256"
-readonly SIGNED_SHA_FILENAME="lrc-linuxmint-22.2-${DATE_STAMP}.sha256.gpg"
 
 readonly CONTAINER_NAME="iso_builder"
 
@@ -69,6 +64,27 @@ parse_args() {
 
     [[ -f "$ISO_IN" ]] || die "Input iso not found: ${ISO_IN}"
     [[ -d "$ISO_OUT_DIR" ]] || die "Output iso dir not found: ${ISO_OUT_DIR}"
+
+    ISO_IN=$(realpath "$ISO_IN") || die "Failed to get absolute path for: ${ISO_IN}"
+    ISO_OUT_DIR=$(realpath "$ISO_OUT_DIR") || die "Failed to get absolute path for: ${ISO_OUT_DIR}"
+
+    if [[ "$(basename ${ISO_IN})" =~ ^linuxmint-([0-9]+\.[0-9]+)-cinnamon-64bit\.iso$ ]] ; then
+        ISO_VERSION="${BASH_REMATCH[1]}"
+    else
+        die "Failed to parse iso filename, expected pattern: linuxmint-{MAJOR.MINOR}-cinnamon-64bit.iso"
+    fi
+
+    # ISO volume label should follow iso 9660 standard (32 bytes, [A-Z0-9_])
+    ISO_VOLUME_LABEL="LINUX_REPAIR_CAFE_MINT_${ISO_VERSION//./_}"
+    ISO_FILENAME="lrc-linuxmint-${ISO_VERSION}-${DATE_STAMP}.iso"
+    SHA_FILENAME="lrc-linuxmint-${ISO_VERSION}-${DATE_STAMP}.sha256"
+    SIGNED_SHA_FILENAME="lrc-linuxmint-${ISO_VERSION}-${DATE_STAMP}.sha256.gpg"
+
+    for name in "$ISO_FILENAME" "$SHA_FILENAME" "$SIGNED_SHA_FILENAME"; do
+        if [[ -e "${ISO_OUT_DIR}/${name}" ]]; then
+            die "Output file already exists: ${ISO_OUT_DIR}/${name}"
+        fi
+    done
 }
 
 sign_checksum() {
