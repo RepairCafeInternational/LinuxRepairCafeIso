@@ -79,8 +79,9 @@ parse_args() {
     ISO_FILENAME="lrc-linuxmint-${ISO_VERSION}-${DATE_STAMP}.iso"
     SHA_FILENAME="lrc-linuxmint-${ISO_VERSION}-${DATE_STAMP}.sha256"
     SIGNED_SHA_FILENAME="lrc-linuxmint-${ISO_VERSION}-${DATE_STAMP}.sha256.gpg"
+    LOG_FILENAME="lrc-linuxmint-${ISO_VERSION}-${DATE_STAMP}.log"
 
-    for name in "$ISO_FILENAME" "$SHA_FILENAME" "$SIGNED_SHA_FILENAME"; do
+    for name in "$ISO_FILENAME" "$SHA_FILENAME" "$SIGNED_SHA_FILENAME" "$LOG_FILENAME"; do
         if [[ -e "${ISO_OUT_DIR}/${name}" ]]; then
             die "Output file already exists: ${ISO_OUT_DIR}/${name}"
         fi
@@ -148,10 +149,16 @@ build_iso() {
         die "Failed to run build_iso.sh"
 }
 
+setup_logging() {
+    # Log all script output to buildlog while stripping out ansi colors
+    exec > >(stdbuf -oL tee >(stdbuf -oL sed 's/\x1b\[[0-9;]*m//g; s/\r//g' > "${ISO_OUT_DIR}/${LOG_FILENAME}")) 2>&1
+}
+
 main() {
     [[ $(command -v docker 2>&1) ]] || die "Docker not found, install first!"
 
     parse_args "$@"
+    setup_logging
     build_container "$CONTAINER_FILE_PATH" "$CONTAINER_NAME"
     build_iso
     create_checksum
