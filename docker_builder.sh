@@ -133,6 +133,8 @@ build_iso() {
         -v "${ISO_OUT_DIR}:/output"
         -v "${PRESEED_DIR}:/preseed:ro"
         -v "/etc/resolv.conf:/etc/resolv.conf:ro"
+        -v "/etc/localtime:/etc/localtime:ro"
+        -v "/etc/timezone:/etc/timezone:ro"
         "$CONTAINER_NAME"
         /build_iso.sh
     )
