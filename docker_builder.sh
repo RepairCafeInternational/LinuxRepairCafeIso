@@ -75,7 +75,7 @@ parse_args() {
     fi
 
     # ISO volume label should follow iso 9660 standard (32 bytes, [A-Z0-9_])
-    ISO_VOLUME_LABEL="LINUX_REPAIR_CAFE_MINT_${ISO_VERSION//./_}"
+    ISO_VOLUME_LABEL="LRC_MINT_${ISO_VERSION//./_}__${DATE_STAMP//./_}"
     ISO_FILENAME="lrc-linuxmint-${ISO_VERSION}-${DATE_STAMP}.iso"
     SHA_FILENAME="lrc-linuxmint-${ISO_VERSION}-${DATE_STAMP}.sha256"
     SIGNED_SHA_FILENAME="lrc-linuxmint-${ISO_VERSION}-${DATE_STAMP}.sha256.gpg"
