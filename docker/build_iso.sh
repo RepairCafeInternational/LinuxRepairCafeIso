@@ -213,6 +213,8 @@ install_packages() {
         apt-get install -y ${packages} || exit 1
     " || die "Failed to install packages inside chroot"
 
+    remove_desktop_install_launcher "$SQUASHFS_DIR"
+
     log "Unmounting /dev, /proc, /sys inside chroot: ${SQUASHFS_DIR}"
     umount "$SQUASHFS_DIR/dev"             || die "Failed to unmount /dev"
     umount "$SQUASHFS_DIR/proc"            || die "Failed to unmount /proc"
@@ -229,6 +231,31 @@ install_packages() {
     
     # Clean up
     rm -rf "$SQUASHFS_DIR"
+}
+
+remove_desktop_install_launcher() {
+    local -r rootfs="$1"
+    local removed_count=0
+    local desktop_file
+
+    log "Removing live desktop installer launchers"
+
+    while IFS= read -r -d '' desktop_file; do
+        if grep -Eiq '^(Exec|Name).*ubiquity|only-ubiquity|automatic-ubiquity|install linux mint' "$desktop_file"; then
+            log "Removing installer launcher: ${desktop_file#"$rootfs"/}"
+            rm -f "$desktop_file"
+            removed_count=$((removed_count + 1))
+        fi
+    done < <(
+        find \
+            "$rootfs/home" \
+            "$rootfs/etc/skel" \
+            -path '*/Desktop/*.desktop' \
+            -type f \
+            -print0 2>/dev/null
+    )
+
+    log "Removed ${removed_count} desktop installer launcher(s)"
 }
 
 update_manifest() {
