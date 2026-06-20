@@ -237,8 +237,21 @@ remove_desktop_install_launcher() {
     local -r rootfs="$1"
     local removed_count=0
     local desktop_file
+    local -a known_install_launchers=(
+        "etc/xdg/autostart/ubiquity-mint.desktop"
+        "usr/share/applications/ubiquity.desktop"
+    )
+    local launcher
 
     log "Removing live desktop installer launchers"
+
+    for launcher in "${known_install_launchers[@]}"; do
+        if [[ -e "${rootfs}/${launcher}" ]]; then
+            log "Removing installer launcher: ${launcher}"
+            rm -f "${rootfs}/${launcher}"
+            removed_count=$((removed_count + 1))
+        fi
+    done
 
     while IFS= read -r -d '' desktop_file; do
         if grep -Eiq '^(Exec|Name).*ubiquity|only-ubiquity|automatic-ubiquity|install linux mint' "$desktop_file"; then
