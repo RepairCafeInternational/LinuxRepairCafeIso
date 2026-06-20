@@ -210,6 +210,7 @@ install_packages() {
     log "Installing packages inside chroot: ${SQUASHFS_DIR}"
     chroot "$SQUASHFS_DIR" /bin/bash -c "
         export DEBIAN_FRONTEND=noninteractive
+        apt-get update || exit 1
         apt-get install -y ${packages} || exit 1
     " || die "Failed to install packages inside chroot"
 
