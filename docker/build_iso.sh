@@ -18,7 +18,7 @@ readonly BUILD_DIR="${WORK_DIR}/build"
 readonly SQUASHFS_DIR="${WORK_DIR}/squashfs"
 
 # Default package configuration
-readonly REPO_EXTRA_PACKAGES="mint-meta-codecs cheese wdutch nodejs npm curl"
+readonly REPO_EXTRA_PACKAGES="mint-meta-codecs cheese wdutch nodejs npm curl zram-tools"
 
 # Default MBR image search paths
 readonly -a DEFAULT_MBR_PATHS=(
@@ -214,6 +214,7 @@ install_packages() {
         apt-get install -y ${packages} || exit 1
     " || die "Failed to install packages inside chroot"
 
+    configure_zram_swap "$SQUASHFS_DIR"
     install_kilocode_cli "$SQUASHFS_DIR"
     install_kilocode_launchers "$SQUASHFS_DIR"
 
@@ -233,6 +234,23 @@ install_packages() {
     
     # Clean up
     rm -rf "$SQUASHFS_DIR"
+}
+
+configure_zram_swap() {
+    local -r rootfs="$1"
+
+    log "Configuring zram swap"
+
+    cat > "$rootfs/etc/default/zramswap" <<'EOF'
+# Match the CodeClub live ISO zram setting: compressed swap sized at 50% RAM.
+ALGO=lz4
+PERCENT=50
+PRIORITY=100
+EOF
+
+    chroot "$rootfs" /bin/bash -c '
+        systemctl enable zramswap.service >/dev/null 2>&1 || true
+    '
 }
 
 install_kilocode_cli() {
