@@ -18,7 +18,7 @@ readonly BUILD_DIR="${WORK_DIR}/build"
 readonly SQUASHFS_DIR="${WORK_DIR}/squashfs"
 
 # Default package configuration
-readonly REPO_EXTRA_PACKAGES="mint-meta-codecs cheese wdutch"
+readonly REPO_EXTRA_PACKAGES="mint-meta-codecs cheese wdutch nodejs npm curl"
 
 # Default MBR image search paths
 readonly -a DEFAULT_MBR_PATHS=(
@@ -213,6 +213,9 @@ install_packages() {
         apt-get install -y ${packages} || exit 1
     " || die "Failed to install packages inside chroot"
 
+    install_kilocode_cli "$SQUASHFS_DIR"
+    install_kilocode_launchers "$SQUASHFS_DIR"
+
     log "Unmounting /dev, /proc, /sys inside chroot: ${SQUASHFS_DIR}"
     umount "$SQUASHFS_DIR/dev"             || die "Failed to unmount /dev"
     umount "$SQUASHFS_DIR/proc"            || die "Failed to unmount /proc"
@@ -229,6 +232,140 @@ install_packages() {
     
     # Clean up
     rm -rf "$SQUASHFS_DIR"
+}
+
+install_kilocode_cli() {
+    local -r rootfs="$1"
+
+    log "Installing KiloCode CLI inside chroot"
+    if chroot "$rootfs" /bin/bash -c '
+        export DEBIAN_FRONTEND=noninteractive
+        export npm_config_audit=false
+        export npm_config_fund=false
+        export npm_config_update_notifier=false
+        npm install -g @kilocode/cli
+    '; then
+        log "KiloCode CLI installed inside chroot"
+    else
+        log "KiloCode CLI install failed inside chroot; live-session fallback will retry"
+    fi
+}
+
+install_kilocode_launchers() {
+    local -r rootfs="$1"
+    local desktop_dir
+    local desktop_file
+
+    log "Installing KiloCode launchers"
+
+    mkdir -p \
+        "$rootfs/usr/local/bin" \
+        "$rootfs/usr/share/applications" \
+        "$rootfs/etc/xdg/autostart" \
+        "$rootfs/etc/skel/Desktop"
+
+    cat > "$rootfs/usr/local/bin/kilocode-install" <<'EOF'
+#!/usr/bin/env bash
+set +e
+
+LOG_FILE="${HOME:-/tmp}/kilocode-install.log"
+NPM_PREFIX="${HOME:-/tmp}/.cache/npm/global"
+
+{
+    echo "KiloCode installer start: $(date)"
+
+    if command -v kilocode >/dev/null 2>&1; then
+        echo "KiloCode already available at: $(command -v kilocode)"
+        exit 0
+    fi
+
+    export NPM_CONFIG_PREFIX="$NPM_PREFIX"
+    export npm_config_audit=false
+    export npm_config_fund=false
+    export npm_config_update_notifier=false
+    export PATH="$NPM_PREFIX/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
+    mkdir -p "$NPM_PREFIX"
+
+    echo "Waiting for npm registry network access..."
+    for attempt in $(seq 1 60); do
+        if curl -fsS --max-time 5 -o /dev/null https://registry.npmjs.org/; then
+            echo "Network ready on attempt ${attempt}"
+            break
+        fi
+        sleep 5
+    done
+
+    for attempt in $(seq 1 10); do
+        echo "npm install attempt ${attempt}"
+        if npm install -g @kilocode/cli; then
+            echo "KiloCode installed at: $(command -v kilocode || true)"
+            exit 0
+        fi
+        sleep 15
+    done
+
+    echo "ERROR: KiloCode install failed"
+    exit 1
+} >> "$LOG_FILE" 2>&1
+EOF
+
+    cat > "$rootfs/usr/local/bin/kilocode-wrapper" <<'EOF'
+#!/usr/bin/env bash
+set +e
+
+export NPM_CONFIG_PREFIX="${HOME:-/tmp}/.cache/npm/global"
+export PATH="$NPM_CONFIG_PREFIX/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
+
+if ! command -v kilocode >/dev/null 2>&1; then
+    echo "KiloCode is not installed yet. Trying to install it now..."
+    echo "Installer log: ${HOME:-/tmp}/kilocode-install.log"
+    /usr/local/bin/kilocode-install
+fi
+
+if ! command -v kilocode >/dev/null 2>&1; then
+    echo
+    echo "KiloCode is still unavailable."
+    echo "Check ${HOME:-/tmp}/kilocode-install.log, then launch KiloCode again."
+    echo
+    read -r -p "Press Enter to close..."
+    exit 1
+fi
+
+exec kilocode "$@"
+EOF
+
+    chmod 755 "$rootfs/usr/local/bin/kilocode-install" \
+              "$rootfs/usr/local/bin/kilocode-wrapper"
+
+    cat > "$rootfs/usr/share/applications/kilocode.desktop" <<'EOF'
+[Desktop Entry]
+Name=KiloCode
+Comment=AI coding assistant
+Exec=x-terminal-emulator -e /usr/local/bin/kilocode-wrapper
+Icon=utilities-terminal
+Terminal=false
+Type=Application
+Categories=Development;
+StartupNotify=true
+EOF
+
+    cat > "$rootfs/etc/xdg/autostart/kilocode-install.desktop" <<'EOF'
+[Desktop Entry]
+Name=Install KiloCode
+Comment=Install KiloCode CLI in the background if needed
+Exec=/usr/local/bin/kilocode-install
+Icon=utilities-terminal
+Terminal=false
+Type=Application
+X-GNOME-Autostart-enabled=true
+EOF
+
+    for desktop_dir in "$rootfs/etc/skel/Desktop" "$rootfs/home/mint/Desktop"; do
+        mkdir -p "$desktop_dir"
+        desktop_file="$desktop_dir/kilocode.desktop"
+        cp "$rootfs/usr/share/applications/kilocode.desktop" "$desktop_file"
+        chmod 755 "$desktop_file"
+    done
 }
 
 update_manifest() {
