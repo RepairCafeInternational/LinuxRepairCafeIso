@@ -217,6 +217,7 @@ install_packages() {
     configure_zram_swap "$SQUASHFS_DIR"
     install_kilocode_cli "$SQUASHFS_DIR"
     install_kilocode_launchers "$SQUASHFS_DIR"
+    remove_desktop_install_launcher "$SQUASHFS_DIR"
 
     log "Unmounting /dev, /proc, /sys inside chroot: ${SQUASHFS_DIR}"
     umount "$SQUASHFS_DIR/dev"             || die "Failed to unmount /dev"
@@ -385,6 +386,31 @@ EOF
         cp "$rootfs/usr/share/applications/kilocode.desktop" "$desktop_file"
         chmod 755 "$desktop_file"
     done
+}
+
+remove_desktop_install_launcher() {
+    local -r rootfs="$1"
+    local removed_count=0
+    local desktop_file
+
+    log "Removing live desktop installer launchers"
+
+    while IFS= read -r -d '' desktop_file; do
+        if grep -Eiq '^(Exec|Name).*ubiquity|only-ubiquity|automatic-ubiquity|install linux mint' "$desktop_file"; then
+            log "Removing installer launcher: ${desktop_file#"$rootfs"/}"
+            rm -f "$desktop_file"
+            removed_count=$((removed_count + 1))
+        fi
+    done < <(
+        find \
+            "$rootfs/home" \
+            "$rootfs/etc/skel" \
+            -path '*/Desktop/*.desktop' \
+            -type f \
+            -print0 2>/dev/null
+    )
+
+    log "Removed ${removed_count} desktop installer launcher(s)"
 }
 
 update_manifest() {
