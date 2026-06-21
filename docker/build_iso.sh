@@ -18,7 +18,7 @@ readonly BUILD_DIR="${WORK_DIR}/build"
 readonly SQUASHFS_DIR="${WORK_DIR}/squashfs"
 
 # Default package configuration
-readonly REPO_EXTRA_PACKAGES="mint-meta-codecs cheese wdutch nodejs npm curl zram-tools"
+readonly REPO_EXTRA_PACKAGES="mint-meta-codecs mint-meta-xfce cheese wdutch nodejs npm curl zram-tools"
 
 # Default MBR image search paths
 readonly -a DEFAULT_MBR_PATHS=(
@@ -215,6 +215,7 @@ install_packages() {
     " || die "Failed to install packages inside chroot"
 
     configure_zram_swap "$SQUASHFS_DIR"
+    install_live_session_selector "$SQUASHFS_DIR"
     install_kilocode_cli "$SQUASHFS_DIR"
     install_kilocode_launchers "$SQUASHFS_DIR"
     remove_desktop_install_launcher "$SQUASHFS_DIR"
@@ -251,6 +252,66 @@ EOF
 
     chroot "$rootfs" /bin/bash -c '
         systemctl enable zramswap.service >/dev/null 2>&1 || true
+    '
+}
+
+install_live_session_selector() {
+    local -r rootfs="$1"
+
+    log "Installing live session selector"
+
+    mkdir -p \
+        "$rootfs/usr/local/sbin" \
+        "$rootfs/etc/systemd/system"
+
+    cat > "$rootfs/usr/local/sbin/lrc-select-live-session" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+cmdline="$(cat /proc/cmdline)"
+session=""
+
+case " ${cmdline} " in
+    *" lrc_session=xfce "*)
+        session="xfce"
+        ;;
+    *)
+        exit 0
+        ;;
+esac
+
+if [[ ! -f "/usr/share/xsessions/${session}.desktop" ]]; then
+    echo "Requested live session is not installed: ${session}" >&2
+    exit 0
+fi
+
+mkdir -p /etc/lightdm/lightdm.conf.d
+cat > /etc/lightdm/lightdm.conf.d/90-lrc-live-session.conf <<SESSION_EOF
+[Seat:*]
+user-session=${session}
+SESSION_EOF
+EOF
+
+    chmod 755 "$rootfs/usr/local/sbin/lrc-select-live-session"
+
+    cat > "$rootfs/etc/systemd/system/lrc-live-session.service" <<'EOF'
+[Unit]
+Description=Select Linux Repair Cafe live desktop session
+DefaultDependencies=no
+After=local-fs.target
+Before=display-manager.service lightdm.service
+ConditionPathExists=/proc/cmdline
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/lrc-select-live-session
+
+[Install]
+WantedBy=sysinit.target
+EOF
+
+    chroot "$rootfs" /bin/bash -c '
+        systemctl enable lrc-live-session.service >/dev/null 2>&1 || true
     '
 }
 
