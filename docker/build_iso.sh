@@ -18,7 +18,7 @@ readonly BUILD_DIR="${WORK_DIR}/build"
 readonly SQUASHFS_DIR="${WORK_DIR}/squashfs"
 
 # Default package configuration
-readonly REPO_EXTRA_PACKAGES="mint-meta-codecs mint-meta-xfce cheese wdutch nodejs npm curl zram-tools"
+readonly REPO_EXTRA_PACKAGES="mint-meta-codecs mint-meta-xfce xfce4-terminal cheese wdutch nodejs npm curl zram-tools"
 
 # Default MBR image search paths
 readonly -a DEFAULT_MBR_PATHS=(
