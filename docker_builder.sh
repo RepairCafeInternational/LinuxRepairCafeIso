@@ -68,24 +68,38 @@ parse_args() {
     ISO_IN=$(realpath "$ISO_IN") || die "Failed to get absolute path for: ${ISO_IN}"
     ISO_OUT_DIR=$(realpath "$ISO_OUT_DIR") || die "Failed to get absolute path for: ${ISO_OUT_DIR}"
 
-    if [[ "$(basename ${ISO_IN})" =~ ^linuxmint-([0-9]+\.[0-9]+)-cinnamon-64bit\.iso$ ]] ; then
-        ISO_VERSION="${BASH_REMATCH[1]}"
-    else
-        die "Failed to parse iso filename, expected pattern: linuxmint-{MAJOR.MINOR}-cinnamon-64bit.iso"
-    fi
-
-    # ISO volume label should follow iso 9660 standard (32 bytes, [A-Z0-9_])
-    ISO_VOLUME_LABEL="LRC_MINT_${ISO_VERSION//./_}__${DATE_STAMP//./_}"
-    ISO_FILENAME="lrc-linuxmint-${ISO_VERSION}-${DATE_STAMP}.iso"
-    SHA_FILENAME="lrc-linuxmint-${ISO_VERSION}-${DATE_STAMP}.sha256"
-    SIGNED_SHA_FILENAME="lrc-linuxmint-${ISO_VERSION}-${DATE_STAMP}.sha256.gpg"
-    LOG_FILENAME="lrc-linuxmint-${ISO_VERSION}-${DATE_STAMP}.log"
+    parse_iso_name "$ISO_IN"
 
     for name in "$ISO_FILENAME" "$SHA_FILENAME" "$SIGNED_SHA_FILENAME" "$LOG_FILENAME"; do
         if [[ -e "${ISO_OUT_DIR}/${name}" ]]; then
             die "Output file already exists: ${ISO_OUT_DIR}/${name}"
         fi
     done
+}
+
+parse_iso_name() {
+    # Parses input iso filename and sets output filenames
+    ISO_BASENAME="$(basename $1)"
+
+    if [[ "${ISO_BASENAME}" =~ ^linuxmint-([0-9]+\.[0-9]+)-([a-z]+)-64bit(-hwe-([0-9]+\.[0-9]+))?\.iso$ ]] ; then
+        ISO_IN_VERSION="${BASH_REMATCH[1]}"
+        ISO_IN_FLAVOR="${BASH_REMATCH[2]}"
+        ISO_IN_HWE_VERSION="${BASH_REMATCH[4]}"
+        if [[ -n "${ISO_IN_HWE_VERSION}" ]] ; then
+            VERSION_STR="lrc-linuxmint-${ISO_IN_FLAVOR}-${ISO_IN_VERSION}-hwe-${ISO_IN_HWE_VERSION}-${DATE_STAMP}"
+            ISO_VOLUME_LABEL="LRC_${ISO_IN_VERSION//./_}_HWE_${ISO_IN_HWE_VERSION//./_}_${DATE_STAMP//./_}"
+        else
+            VERSION_STR="lrc-linuxmint-${ISO_IN_FLAVOR}-${ISO_IN_VERSION}-${DATE_STAMP}"
+            ISO_VOLUME_LABEL="LRC_${ISO_IN_VERSION//./_}_${DATE_STAMP//./_}"
+        fi
+    else
+        die "Failed to parse iso filename, expected pattern: linuxmint-{MAJOR.MINOR}-{FLAVOR}-64bit[-hwe-{KERNEL}].iso"
+    fi
+
+    ISO_FILENAME="${VERSION_STR}.iso"
+    SHA_FILENAME="${VERSION_STR}.sha256"
+    SIGNED_SHA_FILENAME="${VERSION_STR}.sha256.gpg"
+    LOG_FILENAME="${VERSION_STR}.log"
 }
 
 sign_checksum() {
@@ -100,7 +114,7 @@ sign_checksum() {
     local sig_file="${checksum_file}.gpg"
 
     gpg --armor --local-user "$keyid" --output "${out_file}" --detach-sign "$checksum_file" \
-        && log "Signed checksum: ${out_file}" \
+        && log "Signed checksum: $(basename $out_file)" \
         || die "Failed to sign $checksum_file"
 }
 
@@ -118,12 +132,12 @@ build_container() {
 }
 
 create_checksum() {
-    log "Creating sha256sum: ${ISO_OUT_DIR}/${SHA_FILENAME}"
+    log "Creating sha256sum: ${SHA_FILENAME}"
     cd "$ISO_OUT_DIR" ; sha256sum -b "$ISO_FILENAME" > "${ISO_OUT_DIR}/${SHA_FILENAME}"
 }
 
 build_iso() {
-    log "Building iso: ${ISO_OUT_DIR}/${ISO_FILENAME}"
+    log "Building iso: ${ISO_FILENAME}"
 
     local -a docker_args=(
         --privileged
@@ -156,11 +170,26 @@ setup_logging() {
     exec > >(stdbuf -oL tee >(stdbuf -oL sed 's/\x1b\[[0-9;]*m//g; s/\r//g' > "${ISO_OUT_DIR}/${LOG_FILENAME}")) 2>&1
 }
 
+log_inputs_outputs() {
+    log "Input:"
+    log "ISO_IN        = $(basename $ISO_IN)"
+    log "ISO_IN_SHA256 = $(sha256sum -b $ISO_IN | awk '{print $1}')"
+
+    log "Output:"
+    log "ISO_VOLUME_LABEL    = ${ISO_VOLUME_LABEL}"
+    log "ISO_FILENAME        = ${ISO_FILENAME}"
+    log "SHA_FILENAME        = ${SHA_FILENAME}"
+    log "SIGNED_SHA_FILENAME = ${SIGNED_SHA_FILENAME}"
+    log "LOG_FILENAME        = ${LOG_FILENAME}"
+}
+
 main() {
     [[ $(command -v docker 2>&1) ]] || die "Docker not found, install first!"
 
     parse_args "$@"
     setup_logging
+    log_inputs_outputs
+
     build_container "$CONTAINER_FILE_PATH" "$CONTAINER_NAME"
     build_iso
     create_checksum
@@ -169,10 +198,10 @@ main() {
                                         "$KEY_ID"
 
     log "ISO build completed successfully!"
-    log "Output:        ${ISO_OUT_DIR}/${ISO_FILENAME}"
-    log "Checksum file: ${ISO_OUT_DIR}/${SHA_FILENAME}"
+    log "Output:        ${ISO_FILENAME}"
+    log "Checksum file: ${SHA_FILENAME}"
     log "SHA256:        $(cat "${ISO_OUT_DIR}/${SHA_FILENAME}")"
-    [[ -n "$KEY_ID" ]] && log "Signed SHA256: ${ISO_OUT_DIR}/${SIGNED_SHA_FILENAME}"
+    [[ -n "$KEY_ID" ]] && log "Signed SHA256: ${SIGNED_SHA_FILENAME}"
 }
 
 # Only run main if script is executed directly (not sourced)
