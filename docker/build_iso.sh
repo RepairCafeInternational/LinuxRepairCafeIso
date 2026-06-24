@@ -157,14 +157,43 @@ copy_preseed_files() {
         die "Failed to copy ${PRESEED_DIR} to ${BUILD_DIR}/preseed"
 }
 
+log_original_boot_config() {
+    # Diagnostic trail: capture what the upstream ISO actually shipped, so a build
+    # log can be diffed against ours when tracking down EFI boot differences.
+    log "Original boot/grub/grub.cfg preamble (everything before the first menuentry):"
+    awk '/^menuentry/{exit} {print}' "${BUILD_DIR}/boot/grub/grub.cfg"
+
+    log "Original ISO build command (.disk/mkisofs), for comparison with our xorriso flags:"
+    if [[ -f "${BUILD_DIR}/.disk/mkisofs" ]]; then
+        cat "${BUILD_DIR}/.disk/mkisofs"
+    else
+        log "  (.disk/mkisofs not present on this ISO)"
+    fi
+}
+
 copy_boot_configs() {
     log "Copying isolinux.cfg"
     cp -a "${PRESEED_DIR}/config/isolinux.cfg" "${BUILD_DIR}/isolinux/" || \
         die "Failed to copy isolinux.cfg to ${BUILD_DIR}/isolinux"
-    
-    log "Copying grub.cfg"
-    cp -a "${PRESEED_DIR}/config/grub.cfg" "${BUILD_DIR}/boot/grub/" || \
-        die "Failed to copy grub.cfg to ${BUILD_DIR}/boot/grub"
+
+    log_original_boot_config
+
+    log "Merging custom grub.cfg onto the original grub.cfg's preamble"
+    local -r orig_grub_cfg="${BUILD_DIR}/boot/grub/grub.cfg"
+    local -r preamble_file="${WORK_DIR}/grub_preamble.cfg"
+
+    # Keep whatever module loads / terminal+theme setup the upstream grub.cfg had
+    # before its first menuentry. This varies between Mint releases, and our
+    # preseed/config/grub.cfg replaces the whole file rather than extending it -
+    # dropping that preamble can change how grub sets up EFI graphics state before
+    # handing off to the kernel.
+    awk '/^menuentry/{exit} {print}' "$orig_grub_cfg" > "$preamble_file" || \
+        die "Failed to extract original grub.cfg preamble"
+
+    cat "$preamble_file" "${PRESEED_DIR}/config/grub.cfg" > "${orig_grub_cfg}.new" || \
+        die "Failed to build merged grub.cfg"
+    mv "${orig_grub_cfg}.new" "$orig_grub_cfg" || \
+        die "Failed to install merged grub.cfg to ${orig_grub_cfg}"
 }
 
 update_iso_checksum() {
