@@ -33,6 +33,7 @@ PRESEED_DIR=""
 ISO_PUBLISHER=""
 ISO_VOLUME_LABEL=""
 MBR_IMAGE_PATH=""
+BOOT_MENU_TITLE=""
 
 log() {
     echo -e "\033[32m[DOCKER $(date '+%Y-%m-%d %H:%M:%S')]\033[0m $1"
@@ -165,6 +166,9 @@ copy_boot_configs() {
     log "Copying grub.cfg"
     cp -a "${PRESEED_DIR}/config/grub.cfg" "${BUILD_DIR}/boot/grub/" || \
         die "Failed to copy grub.cfg to ${BUILD_DIR}/boot/grub"
+
+    sed -i "s/{{ REPLACE_MENU_TITLE }}/$BOOT_MENU_TITLE/g" "${BUILD_DIR}/isolinux/isolinux.cfg"
+    sed -i "s/{{ REPLACE_MENU_TITLE }}/$BOOT_MENU_TITLE/g" "${BUILD_DIR}/boot/grub/grub.cfg"
 }
 
 update_iso_checksum() {
@@ -306,7 +310,7 @@ build_iso() {
 }
 
 parse_arguments() {
-    while getopts ":i:o:p:P:V:m:h" opt; do
+    while getopts ":i:o:p:P:V:m:b:h" opt; do
         case $opt in
             i) ISO_IN="$OPTARG" ;;
             o) ISO_OUT="$OPTARG" ;;
@@ -314,6 +318,7 @@ parse_arguments() {
             P) ISO_PUBLISHER="$OPTARG" ;;
             V) ISO_VOLUME_LABEL="$OPTARG" ;;
             m) MBR_IMAGE_PATH="$OPTARG" ;;
+            b) BOOT_MENU_TITLE="$OPTARG" ;;
             h) show_usage; exit 0 ;;
             :) show_usage; die "Option -$OPTARG requires an argument" ;;
             *) show_usage; die "Unknown option: -$OPTARG" ;;

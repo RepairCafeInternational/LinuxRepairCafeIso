@@ -100,6 +100,8 @@ parse_iso_name() {
     SHA_FILENAME="${VERSION_STR}.sha256"
     SIGNED_SHA_FILENAME="${VERSION_STR}.sha256.gpg"
     LOG_FILENAME="${VERSION_STR}.log"
+    #BOOT_MENU_TITLE="${VERSION_STR//-/ }"
+    BOOT_MENU_TITLE="${VERSION_STR}"
 }
 
 sign_checksum() {
@@ -159,6 +161,7 @@ build_iso() {
         -p "/preseed"
         -P "${ISO_PUBLISHER}"
         -V "${ISO_VOLUME_LABEL}"
+        -b "${BOOT_MENU_TITLE}"
     )
     
     docker run "${docker_args[@]}" "${build_args[@]}" || \
@@ -181,6 +184,7 @@ log_inputs_outputs() {
     log "SHA_FILENAME        = ${SHA_FILENAME}"
     log "SIGNED_SHA_FILENAME = ${SIGNED_SHA_FILENAME}"
     log "LOG_FILENAME        = ${LOG_FILENAME}"
+    log "BOOT_MENU_TITLE     = ${BOOT_MENU_TITLE}"
 }
 
 main() {
