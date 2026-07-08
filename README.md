@@ -11,7 +11,12 @@ This ISO will boot on both MBR and EFI systems.
 
 ## Download pre made ISOs
 
-Download the latest iso on [sourceforge](https://sourceforge.net/projects/linux-iso).  
+Download the latest iso's on [sourceforge](https://sourceforge.net/projects/linux-iso).  
+NOTE:
+The iso's come in two versions, the regular version and the [HWE](https://www.linuxmint.com/hwe.php) version.  
+HWE stands for Hardware Enablement. These images include a kernel which is newer than the one in the regular ISO, to improve compatibility with more recent hardware.  
+It is recommended to first use the regular version.  
+When you run into hardware detection problems you can try the HWE version.
 
 ## Changes from the default install
 
@@ -56,9 +61,9 @@ This ensures the file really comes from the Linux Repair Café project and has n
 
 Verification requires three files and a public key.  
 
-    lrc-linuxmint-VERSION-YYYY.MM.DD.iso
-    lrc-linuxmint-VERSION-YYYY.MM.DD.iso.sha256
-    lrc-linuxmint-VERSION-YYYY.MM.DD.iso.sha256.gpg
+    lrc-linuxmint-FLAVOR-VERSION-YYYY.MM.DD.iso
+    lrc-linuxmint-FLAVOR-VERSION-YYYY.MM.DD.iso.sha256
+    lrc-linuxmint-FLAVOR-VERSION-YYYY.MM.DD.iso.sha256.gpg
 
 For every ISO release you can find these files on our sourceforge page.  
 
@@ -81,8 +86,8 @@ After importing our public key, check its fingerprint:
 We sign the *.sha256sum file with our private GPG key.  
 You verify it using our public key:  
 
-    gpg --verify lrc-linuxmint-VERSION-YYYY.MM.DD.iso.sha256sum.gpg \
-                 lrc-linuxmint-VERSION-YYYY.MM.DD.iso.sha256sum
+    gpg --verify lrc-linuxmint-FLAVOR-VERSION-YYYY.MM.DD.iso.sha256sum.gpg \
+                 lrc-linuxmint-FLAVOR-VERSION-YYYY.MM.DD.iso.sha256sum
 
 ### Checksum proves the ISO
 Finally, check that the ISO’s SHA-256 hash matches the signed checksum.  
@@ -90,7 +95,7 @@ If they match, the ISO is guaranteed to be exactly the one we released.
 
     # Place all files in the same directory.
     # This should return an OK
-    sha256sum --check lrc-linuxmint-VERSION-YYYY.MM.DD.iso.sha256
+    sha256sum --check lrc-linuxmint-FLAVOR-VERSION-YYYY.MM.DD.iso.sha256
 
 
 ## Create install ISO
