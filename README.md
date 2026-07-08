@@ -12,9 +12,11 @@ This ISO will boot on both MBR and EFI systems.
 ## Download pre made ISOs
 
 Download the latest iso's on [sourceforge](https://sourceforge.net/projects/linux-iso).  
-NOTE:
-The iso's come in two versions, the regular version and the [HWE](https://www.linuxmint.com/hwe.php) version.  
-HWE stands for Hardware Enablement. These images include a kernel which is newer than the one in the regular ISO, to improve compatibility with more recent hardware.  
+
+NOTE:  
+The iso's come in two versions, the [regular](https://www.linuxmint.com/download.php) version and the [HWE](https://www.linuxmint.com/hwe.php) version.  
+HWE stands for Hardware Enablement.  
+These images include a kernel which is newer than the one in the regular ISO, to improve compatibility with more recent hardware.  
 It is recommended to first use the regular version.  
 When you run into hardware detection problems you can try the HWE version.
 
