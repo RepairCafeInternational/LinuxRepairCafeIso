@@ -159,6 +159,8 @@ copy_preseed_files() {
 }
 
 copy_boot_configs() {
+    # Copy custom bootloader configs and set a custom menu header for isolinux.
+    # TODO: Add custom menu header for grub
     log "Copying isolinux.cfg"
     cp -a "${PRESEED_DIR}/config/isolinux.cfg" "${BUILD_DIR}/isolinux/" || \
         die "Failed to copy isolinux.cfg to ${BUILD_DIR}/isolinux"
@@ -168,7 +170,6 @@ copy_boot_configs() {
         die "Failed to copy grub.cfg to ${BUILD_DIR}/boot/grub"
 
     sed -i "s/{{ REPLACE_MENU_TITLE }}/$BOOT_MENU_TITLE/g" "${BUILD_DIR}/isolinux/isolinux.cfg"
-    sed -i "s/{{ REPLACE_MENU_TITLE }}/$BOOT_MENU_TITLE/g" "${BUILD_DIR}/boot/grub/grub.cfg"
 }
 
 update_iso_checksum() {
